@@ -28,7 +28,7 @@ const poseImage = {
     3: null
 }
 
-const pets = {};
+const petData = {};
 
 const settings = {
     oldPose: {
@@ -83,6 +83,8 @@ let battleLogOverrideElement = null;
 let battleInterval = null;
 let petsFetched = false;
 let itemLogExpanded = false;
+let battleLogExpanded;
+
 /**
  * Retrieve battledome HTML elements and clone them to use as overrides
  */
@@ -101,11 +103,13 @@ function setUpElements() {
             backgroundElement.parentNode.append(backgroundOverrideElement);
         }
 
+        // As battledome elements are constantly being updated, any changes made to them will be reverted, so we need to make copies
         if (petElement) {
             petOverrideElement = petElement.cloneNode(false);
             petOverrideElement.id = 'p1override';
             petOverrideElement.style.width = '150px';
             petOverrideElement.style.height = '150px';
+            petOverrideElement.style.backgroundImage = 'none';
             petOverrideElement.style.backgroundSize = '150px';
             petOverrideElement.style.backgroundPosition = 'center';
             petOverrideElement.style.left = '68px';
@@ -224,6 +228,7 @@ function setUpItemLog() {
         localStorage.setItem('np_bd_items', JSON.stringify([]));
         localStorage.setItem('np_bd_neopoints', 0);
         footerNeopointCount.textContent = '0 NP';
+        footerItemCount.textContent = '0/15 Items';
     } else {
         rewards = JSON.parse(localStorage.getItem('np_bd_items') || '[]');
         footerItemCount.textContent = `${rewards.length}/15 Items`;
@@ -352,6 +357,7 @@ function toggleSetting(settingsKey) {
     const active = settings[settingsKey].isActive;
 
     if (active) {
+        if (!petsFetched && settingsKey === 'oldPose') fetchPetData();
         if (!battleInterval) startbattleInterval();
 
         localStorage.setItem(settings[settingsKey].key, 'true');
@@ -359,6 +365,7 @@ function toggleSetting(settingsKey) {
         settings[settingsKey].toggleElement.firstChild.style.left = '18px';
 
         if ((settingsKey === 'oldBattleLog' || settingsKey === 'allIcons') && currentRound > 1) overrideBattleLog();
+        if (!itemLogElement && settingsKey === 'itemLog') setUpItemLog();
     } else {
         localStorage.removeItem(settings[settingsKey].key);
         settings[settingsKey].toggleElement.style.backgroundColor = '#8E8E8E';
@@ -369,28 +376,41 @@ function toggleSetting(settingsKey) {
             if (battleLogOverrideElement && logContainer.contains(battleLogOverrideElement)) logContainer.removeChild(battleLogOverrideElement);
             if (battleLogElement) battleLogElement.style.display = 'block';
 
-            // Re-call override battle log if a battle log setting is stil active
+            // Re-call override battle log if one of the battle log settings is stil active
             if ((settingsKey === 'oldBattleLog' && settings.allIcons.isActive) || (settingsKey === 'allIcons'  && settings.oldBattleLog.isActive)) {
                 overrideBattleLog();
+            }
+
+            // Stop tracking collapsed state of the log
+            if (!settings.oldBattleLog.isActive && !settings.allIcons.isActive) {
+                battleLogExpanded = undefined;
             }
         }
     }
 
     if (settingsKey === 'oldPose' && petsFetched) {
-        if (petElement) petElement.style.opacity = active ? '0' : '1';
-        if (petOverrideElement) {
-            petOverrideElement.style.opacity = active ? '1' : '0';
-            petOverrideElement.style.transition = `opacity 0.2s ease ${active ? '0.4' : '0'}s`;
-            petErrorOverrideElement.style.opacity = active ? '1' : '0';
-            petErrorOverrideElement.style.transition = `opacity 0.2s ease ${active ? '0.4' : '0'}s`;
-        }
-        if (backgroundOverrideElement) {
-            backgroundOverrideElement.style.opacity = active ? '1' : '0';
-            backgroundOverrideElement.style.transition = `opacity 0.2s ease ${active ? '0' : '0.4'}s`;
-        }
+        togglePetOverride(active);
     }
 
     if (settingsKey === 'itemLog' && itemLogElement) itemLogElement.style.display = active ? 'flex' : 'none';
+}
+
+/**
+ * Toggles pet override elements
+ * @param active Whether to show or hide overrides
+ */
+function togglePetOverride(active) {
+    if (petElement) petElement.style.opacity = active ? '0' : '1';
+    if (petOverrideElement) {
+        petOverrideElement.style.opacity = active ? '1' : '0';
+        petOverrideElement.style.transition = `opacity 0.2s ease ${active ? '0.4' : '0'}s`;
+        petErrorOverrideElement.style.opacity = active ? '1' : '0';
+        petErrorOverrideElement.style.transition = `opacity 0.2s ease ${active ? '0.4' : '0'}s`;
+    }
+    if (backgroundOverrideElement) {
+        backgroundOverrideElement.style.opacity = active ? '1' : '0';
+        backgroundOverrideElement.style.transition = `opacity 0.2s ease ${active ? '0' : '0.4'}s`;
+    }
 }
 
 /**
@@ -433,7 +453,6 @@ function createToggle(settingsKey) {
  * Creates battlelog override element
  */
 function overrideBattleLog() {
-    // Since the log refreshes often, make a copy of the log to avoid having overrides reverted
     const logContainer = document.getElementById('logcont');
 
     // Remove old copy if new round
@@ -442,18 +461,13 @@ function overrideBattleLog() {
     }
 
     battleLogElement = logContainer.firstElementChild;
+
+    // Since the log refreshes often, make a copy of the log to avoid having changes reverted
     battleLogOverrideElement = battleLogElement.cloneNode(true);
     battleLogOverrideElement.id = 'logoverride';
     battleLogOverrideElement.style.display = 'block';
 
     battleLogElement.style.display = 'none';
-    logContainer.classList.remove('collapsed');
-
-    const elementIds = ['#flround', '#log', '#log_totals', '#log_footer'];
-
-    for (let e = 0; e < elementIds.length; e++) {
-        battleLogOverrideElement.querySelector(elementIds[e]).classList.remove('collapsed');
-    }
 
     // Icons
     if (settings.allIcons.isActive) {
@@ -464,6 +478,7 @@ function overrideBattleLog() {
                 const icon = iconContainers[i].firstChild.cloneNode(false);
                 icon.style.filter = 'drop-shadow(0px 0px 3px rgba(0, 0, 0, 0.5))';
                 if (icon.classList.contains('physical') && icon.classList.contains('defend')) icon.style.backgroundPosition = '-140px -20px';
+                if (icon.classList.contains('water') && icon.classList.contains('defend')) icon.style.backgroundPosition = '-100px -20px';
                 iconContainers[i].textContent='';
     
                 for (let j = 0; j < iconCount; j++) {
@@ -482,7 +497,7 @@ function overrideBattleLog() {
         }
     }
 
-    // Old battledome log
+    // Set up battle log contents
     if (settings.oldBattleLog.isActive) {
         const logBackground = document.createElement('div');
         logBackground.id = 'logbackground';
@@ -530,6 +545,43 @@ function overrideBattleLog() {
     }
 
     logContainer.append(battleLogOverrideElement);
+
+    // Update collapsed state
+    if (battleLogExpanded === undefined) {
+        battleLogExpanded = false;
+        if (logContainer?.firstElementChild.querySelector('#logheader')?.querySelector('#flcollapse')?.classList.contains('collapsed')) {
+            battleLogExpanded = true;
+        }
+        toggleExpandBattleLog();
+    }
+}
+
+/**
+ * Toggle the collapsed state of the custom battlelog
+ */
+function toggleExpandBattleLog() {
+    const logContainer = document.getElementById('logcont');
+
+    if (logContainer) {
+        if (battleLogExpanded) {
+            logContainer.classList.add('collapsed');
+        } else {
+            logContainer.classList.remove('collapsed');
+        }
+
+        const elementIds = ['#flround', '#flcollapse', '#log', '#log_totals', '#log_footer'];
+
+        for (let i = 0; i < elementIds.length; i++) {
+            const element = logContainer.querySelectorAll(elementIds[i]);
+            for(var e = 0; e < element.length; e++) {
+                if (battleLogExpanded) {
+                    element[e].classList.add('collapsed');
+                } else {
+                    element[e].classList.remove('collapsed');
+                }
+            }
+        }
+    }
 }
 
 /**
@@ -547,14 +599,14 @@ function overrideBattlePose() {
             if (overlayElement?.style.backgroundImage.includes('defend')) poseIndex = 4;
         }
 
-        if (POSE[poseIndex] && petOverrideElement.dataset.pose !== poseIndex && pets[activePetName]) {
+        if (POSE[poseIndex] && petOverrideElement.dataset.pose !== poseIndex && petData[activePetName]) {
             petOverrideElement.dataset.pose = poseIndex;
             if (!poseImage[poseIndex]) {
-                poseImage[poseIndex] = `url("//images.neopets.com/pets/${POSE[poseIndex].name}/${pets[activePetName].species}_${pets[activePetName].color}_${POSE[poseIndex].suffix}.gif")`;
+                poseImage[poseIndex] = `url("//images.neopets.com/pets/${POSE[poseIndex].name}/${petData[activePetName].species}_${petData[activePetName].color}_${POSE[poseIndex].suffix}.gif")`;
             }
 
             // Flip angry pose image for certain species
-            petOverrideElement.style.transform = `scaleX(${poseIndex == 1 && FLIP_SPECIES.includes(pets[activePetName].species) ? '1' : '-1'})`;
+            petOverrideElement.style.transform = `scaleX(${poseIndex == 1 && FLIP_SPECIES.includes(petData[activePetName].species) ? '1' : '-1'})`;
             petOverrideElement.style.backgroundImage = poseImage[poseIndex];
         }
     }
@@ -569,16 +621,20 @@ function fetchPetData() {
         var fetchedDocument = parser.parseFromString(html, 'text/html');
         var petElements = fetchedDocument.getElementsByClassName('hp-carousel-pet');
         for (let i = 0; i < petElements.length; i++) {
-            pets[petElements[i].dataset.name] = {
+            petData[petElements[i].dataset.name] = {
                 species: petElements[i].dataset.species.toLowerCase(),
                 color: petElements[i].dataset.color.toLowerCase()
             }
         }
         petsFetched = true;
+        togglePetOverride(true);
     }).catch(error => {
         petsFetched = true;
         console.warn('Error: ', error);
     });
+
+    // If fetch request times out or takes too long
+    setTimeout(() => { if (!petsFetched) petsFetched = true; }, 1000);
 }
 
 /**
@@ -599,13 +655,32 @@ function startbattleInterval() {
 
 if (battleInterval) clearInterval(battleInterval);
 
-fetchPetData();
-setUpItemLog();
+document.getElementById('content').addEventListener("click", (event) => {
+    // If start fight button clicked, set up settings
+    if (event.target.parentNode?.id === 'start') {
+        if (setUpElements()) {
+            setUpSettings();
 
-document.getElementById('arenacontainer').addEventListener("click", (event) => {
-    // If collect rewards button clicked, stop battle interval
+            const settingsList = Object.keys(settings);
+            for (let i = 0; i < settingsList.length; i++) {
+                settings[settingsList[i]].isActive = localStorage.getItem(settings[settingsList[i]].key) === 'true';
+                toggleSetting(settingsList[i]);
+            }
+        }
+
+        // Fix Cosmic Dome foreground
+        const sceneElement = document.getElementById('gQ_scenegraph');
+        if (sceneElement && sceneElement.querySelector('#foreground')?.firstChild?.style.backgroundImage.includes('cosmic_dome')) {
+            sceneElement.querySelector('#foreground').firstChild.style.width = '100%';
+            sceneElement.querySelector('#foreground').firstChild.style.height = '100%';
+        }
+    }
+
+    // If collect rewards button clicked
     if (event.target.classList.contains('end_ack')) {
+        // Stop battle interval
         clearInterval(battleInterval);
+
         // Check for rewards
         rewardRows = document.getElementById('bd_rewardsloot').firstChild.childNodes;
         for (let r = 0; r < rewardRows.length; r++) {
@@ -655,23 +730,9 @@ document.getElementById('arenacontainer').addEventListener("click", (event) => {
         populateItemLog();
     }
 
-    // If start fight button clicked, set up settings
-    if (event.target.parentNode?.id === 'start') {
-        if (setUpElements()) {
-            setUpSettings();
-
-            const settingsList = Object.keys(settings);
-            for (let i = 0; i < settingsList.length; i++) {
-                settings[settingsList[i]].isActive = localStorage.getItem(settings[settingsList[i]].key) === 'true';
-                toggleSetting(settingsList[i]);
-            }
-        }
-
-        // Fix Cosmic Dome foreground
-        const sceneElement = document.getElementById('gQ_scenegraph');
-        if (sceneElement && sceneElement.querySelector('#foreground')?.firstChild?.style.backgroundImage.includes('cosmic_dome')) {
-            sceneElement.querySelector('#foreground').firstChild.style.width = '100%';
-            sceneElement.querySelector('#foreground').firstChild.style.height = '100%';
-        }
+    // If Combat Log button is clicked
+    if (event.target.id === 'flcollapse' && (settings.allIcons.isActive || settings.oldBattleLog.isActive) && battleLogOverrideElement) {
+        battleLogExpanded = !battleLogExpanded;
+        toggleExpandBattleLog();
     }
 });
