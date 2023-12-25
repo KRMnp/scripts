@@ -52,7 +52,7 @@ const settings = {
         toggleElement: null
     },
     itemLog: {
-        label: 'Show Item Log',
+        label: 'Enable Item Log',
         key: 'np_bd_item_log',
         isActive: false,
         toggle: null,
