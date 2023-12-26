@@ -687,12 +687,13 @@ document.getElementById('content').addEventListener("click", (event) => {
             const endMessages = rewardRows[r].querySelector('ul');
             if (endMessages?.childNodes) {
                 for (let l = 0; l < endMessages.childNodes.length; l++) {
-                    console.log(document.getElementById('itemlogfooter').firstChild.textContent);
+                    // If NP limit reached
                     if (endMessages.childNodes[l].textContent.includes('You have reached the NP limit')
                         && document.getElementById('itemlogfooter')?.firstChild?.textContent !== '1500 NP') {
                         document.getElementById('itemlogfooter').firstChild.textContent = '1500 NP';
                         localStorage.setItem('np_bd_neopoints', 1500);
                     }
+                    // If item limit reached
                     if (endMessages.childNodes[l].textContent.includes('You have reached the item limit') && rewards.length < 15) {
                         while (rewards.length < 15) {
                             rewards.push({
@@ -705,17 +706,19 @@ document.getElementById('content').addEventListener("click", (event) => {
                 }
             }
 
-            const neopoints = Number(localStorage.getItem('np_bd_neopoints'));
+            let neopoints = Number(localStorage.getItem('np_bd_neopoints'));
 
             const rowItems = rewardRows[r].childNodes;
             for (let d = 0; d < rowItems.length; d++) {
                 const nameElement = rowItems[d].querySelector('span.prizname');
                 if (nameElement?.textContent) {
                     if (nameElement.textContent.includes('Neopoints') && document.getElementById('footerneopointcount')?.textContent) {
-                        const currentNp = Number(nameElement.textContent.split(' ')[0]) + neopoints;
-                        localStorage.setItem('np_bd_neopoints', currentNp);
-                        document.getElementById('footerneopointcount').textContent = `${currentNp} NP`;
+                        if (neopoints >= 1500) neopoints = 0; // If current neopoints is somehow at or greater than the limit, clear it
+                        const totalNp = Number(nameElement.textContent.split(' ')[0]) + neopoints;
+                        localStorage.setItem('np_bd_neopoints', totalNp);
+                        document.getElementById('footerneopointcount').textContent = `${totalNp} NP`;
                     } else {
+                        if (rewards.length >= 15) rewards = []; // If current rewards list is somehow at or greater than the limit, clear it
                         rewards.push({
                             img: rowItems[d].querySelector('img').src,
                             name: nameElement.textContent
