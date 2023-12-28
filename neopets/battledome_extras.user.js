@@ -695,11 +695,21 @@ document.getElementById('content').addEventListener("click", (event) => {
                     }
                     // If item limit reached
                     if (endMessages.childNodes[l].textContent.includes('You have reached the item limit') && rewards.length < 15) {
-                        while (rewards.length < 15) {
-                            rewards.push({
-                                img: 'https://images.neopets.com/ncmall/cleaners/question.png',
-                                name: 'Check Inventory'
-                            });
+                        if (rewards.length === 0) {
+                            const messageElement = document.createElement('div');
+                            messageElement.style.paddingBlock = '20px 10px';
+                            messageElement.style.fontSize = '18px';
+                            messageElement.style.fontWeight = '600';
+                            messageElement.textContent = 'You have already collected all your rewards today!';
+                            itemLogElement.querySelector('#itemloglist').append(messageElement);
+                            document.getElementById('footeritemcount').textContent = '15/15 Items';
+                        } else {
+                            while (rewards.length < 15) {
+                                rewards.push({
+                                    img: 'https://images.neopets.com/ncmall/cleaners/question.png',
+                                    name: 'Check Inventory'
+                                });
+                            }
                         }
                         break;
                     }
@@ -728,9 +738,11 @@ document.getElementById('content').addEventListener("click", (event) => {
             }
         }
 
-        localStorage.setItem('np_bd_items', JSON.stringify(rewards));
-        document.getElementById('footeritemcount').textContent = `${rewards.length}/15 Items`;
-        populateItemLog();
+        if (rewards.length) {
+            localStorage.setItem('np_bd_items', JSON.stringify(rewards));
+            document.getElementById('footeritemcount').textContent = `${rewards.length}/15 Items`;
+            populateItemLog();
+        }
     }
 
     // If Combat Log button is clicked
