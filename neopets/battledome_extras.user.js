@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Neopets Battledome Extras
 // @namespace    neopets
-// @version      1.0
+// @version      1.0.1
 // @description  Adds a few features to the Battledome.
 // @author       krm
 // @match        *://*.neopets.com/dome/arena.phtml
@@ -406,6 +406,7 @@ function togglePetOverride(active) {
         petOverrideElement.style.transition = `opacity 0.2s ease ${active ? '0.4' : '0'}s`;
         petErrorOverrideElement.style.opacity = active ? '1' : '0';
         petErrorOverrideElement.style.transition = `opacity 0.2s ease ${active ? '0.4' : '0'}s`;
+        document.getElementById('p1shadow').style.opacity = active ? '0' : '1';
     }
     if (backgroundOverrideElement) {
         backgroundOverrideElement.style.opacity = active ? '1' : '0';
@@ -510,34 +511,36 @@ function overrideBattleLog() {
         battleLogOverrideElement.insertBefore(logBackground, battleLogOverrideElement.firstChild);
     
         const tableBody = battleLogOverrideElement.querySelector('#log').firstElementChild;
-        const rows = tableBody.childNodes;
-        for (let l = 0; l < rows.length; l++) {
-            // Ignore row dividers
-            if (rows[l]?.childNodes.length > 1) {
-                rows[l].style.height = '40px';
-    
-                let icons;
-                if (rows[l]?.firstChild.hasChildNodes()) {
-                    icons = rows[l].firstChild;
-                    rows[l].lastChild.style.backgroundColor = 'transparent';
-                } else if (rows[l]?.lastChild.hasChildNodes()) {
-                    icons = rows[l].lastChild;
-                    rows[l].firstChild.style.backgroundColor = 'transparent';
-                } else {
-                    rows[l].lastChild.style.backgroundColor = 'transparent';
-                    rows[l].firstChild.style.backgroundColor = 'transparent';
-                }
-    
-                if (icons?.hasChildNodes()) {
-                    if (icons?.firstChild?.firstChild.classList.contains('defend')) {
-                        icons.style.backgroundColor = '#B9E88B';
-                        rows[l].querySelector('.msg').style.backgroundColor = '#B9E88B';
-                    } else if (icons?.firstChild?.firstChild.classList.contains('hp')) {
-                        icons.style.backgroundColor = '#FBAFAF';
-                        rows[l].querySelector('.msg').style.backgroundColor = '#FBAFAF';
+        if (tableBody?.childNodes) {
+            const rows = tableBody.childNodes;
+            for (let l = 0; l < rows.length; l++) {
+                // Ignore row dividers
+                if (rows[l]?.childNodes.length > 1) {
+                    rows[l].style.height = '40px';
+        
+                    let icons;
+                    if (rows[l]?.firstChild.hasChildNodes()) {
+                        icons = rows[l].firstChild;
+                        rows[l].lastChild.style.backgroundColor = 'transparent';
+                    } else if (rows[l]?.lastChild.hasChildNodes()) {
+                        icons = rows[l].lastChild;
+                        rows[l].firstChild.style.backgroundColor = 'transparent';
                     } else {
-                        icons.style.backgroundColor = '#E1BD9A';
-                        rows[l].querySelector('.msg').style.backgroundColor = '#E1BD9A';
+                        rows[l].lastChild.style.backgroundColor = 'transparent';
+                        rows[l].firstChild.style.backgroundColor = 'transparent';
+                    }
+        
+                    if (icons?.hasChildNodes()) {
+                        if (icons?.firstChild?.firstChild.classList.contains('defend')) {
+                            icons.style.backgroundColor = '#B9E88B';
+                            rows[l].querySelector('.msg').style.backgroundColor = '#B9E88B';
+                        } else if (icons?.firstChild?.firstChild.classList.contains('hp')) {
+                            icons.style.backgroundColor = '#FBAFAF';
+                            rows[l].querySelector('.msg').style.backgroundColor = '#FBAFAF';
+                        } else {
+                            icons.style.backgroundColor = '#E1BD9A';
+                            rows[l].querySelector('.msg').style.backgroundColor = '#E1BD9A';
+                        }
                     }
                 }
             }
