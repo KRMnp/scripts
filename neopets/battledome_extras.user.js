@@ -660,22 +660,24 @@ if (battleInterval) clearInterval(battleInterval);
 
 document.getElementById('content').addEventListener("click", (event) => {
     // If start fight button clicked, set up settings
-    if (event.target.parentNode?.id === 'start') {
-        if (setUpElements()) {
-            setUpSettings();
-
-            const settingsList = Object.keys(settings);
-            for (let i = 0; i < settingsList.length; i++) {
-                settings[settingsList[i]].isActive = localStorage.getItem(settings[settingsList[i]].key) === 'true';
-                toggleSetting(settingsList[i]);
+    if (event.target.parentNode?.id === 'start' || event.target.parentNode?.id === 'fight') {
+        if (!settingsElement) {
+            if (setUpElements()) {
+                setUpSettings();
+    
+                const settingsList = Object.keys(settings);
+                for (let i = 0; i < settingsList.length; i++) {
+                    settings[settingsList[i]].isActive = localStorage.getItem(settings[settingsList[i]].key) === 'true';
+                    toggleSetting(settingsList[i]);
+                }
             }
-        }
-
-        // Fix Cosmic Dome foreground
-        const sceneElement = document.getElementById('gQ_scenegraph');
-        if (sceneElement && sceneElement.querySelector('#foreground')?.firstChild?.style.backgroundImage.includes('cosmic_dome')) {
-            sceneElement.querySelector('#foreground').firstChild.style.width = '100%';
-            sceneElement.querySelector('#foreground').firstChild.style.height = '100%';
+    
+            // Fix Cosmic Dome foreground
+            const sceneElement = document.getElementById('gQ_scenegraph');
+            if (sceneElement && sceneElement.querySelector('#foreground')?.firstChild?.style.backgroundImage.includes('cosmic_dome')) {
+                sceneElement.querySelector('#foreground').firstChild.style.width = '100%';
+                sceneElement.querySelector('#foreground').firstChild.style.height = '100%';
+            }
         }
     }
 
