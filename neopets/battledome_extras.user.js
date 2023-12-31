@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Neopets Battledome Extras
 // @namespace    neopets
-// @version      1.0.1
+// @version      1.0.2
 // @description  Adds a few features to the Battledome.
 // @author       krm
 // @match        *://*.neopets.com/dome/arena.phtml
@@ -728,12 +728,10 @@ document.getElementById('content').addEventListener("click", (event) => {
                 const nameElement = rowItems[d].querySelector('span.prizname');
                 if (nameElement?.textContent) {
                     if (nameElement.textContent.includes('Neopoints') && document.getElementById('footerneopointcount')?.textContent) {
-                        if (neopoints >= 1500) neopoints = 0; // If current neopoints is somehow at or greater than the limit, clear it
                         const totalNp = Number(nameElement.textContent.split(' ')[0]) + neopoints;
                         localStorage.setItem('np_bd_neopoints', totalNp);
                         document.getElementById('footerneopointcount').textContent = `${totalNp} NP`;
                     } else {
-                        if (rewards.length >= 15) rewards = []; // If current rewards list is somehow at or greater than the limit, clear it
                         rewards.push({
                             img: rowItems[d].querySelector('img').src,
                             name: nameElement.textContent
