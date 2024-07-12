@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Neopets Battledome Extras
 // @namespace    neopets
-// @version      1.0.2
+// @version      1.0.3
 // @description  Adds a few features to the Battledome.
 // @author       krm
 // @match        *://*.neopets.com/dome/arena.phtml
@@ -658,7 +658,7 @@ function startbattleInterval() {
 
 if (battleInterval) clearInterval(battleInterval);
 
-document.getElementById('content').addEventListener("click", (event) => {
+document.getElementById('arenacontainer').addEventListener("click", (event) => {
     // If start fight button clicked, set up settings
     if (event.target.parentNode?.id === 'start' || event.target.parentNode?.id === 'fight') {
         if (!settingsElement) {
@@ -679,6 +679,9 @@ document.getElementById('content').addEventListener("click", (event) => {
                 sceneElement.querySelector('#foreground').firstChild.style.height = '100%';
             }
         }
+        // Fix search bar randomly appearing
+        const searchBar = document.getElementById('navSearchH5')
+        if (searchBar && searchBar.style.display !== 'none') searchBar.style.display = 'none';
     }
 
     // If collect rewards button clicked
