@@ -697,9 +697,9 @@ document.getElementById('arenacontainer').addEventListener("click", (event) => {
                 for (let l = 0; l < endMessages.childNodes.length; l++) {
                     // If NP limit reached
                     if (endMessages.childNodes[l].textContent.includes('You have reached the NP limit')
-                        && document.getElementById('itemlogfooter')?.firstChild?.textContent !== '1500 NP') {
-                        document.getElementById('itemlogfooter').firstChild.textContent = '1500 NP';
-                        localStorage.setItem('np_bd_neopoints', 1500);
+                        && (parseInt(document.getElementById('itemlogfooter')?.firstChild?.textContent) < 50000)) {
+                        document.getElementById('itemlogfooter').firstChild.textContent = '50000 NP';
+                        localStorage.setItem('np_bd_neopoints', 50000);
                     }
                     // If item limit reached
                     if (endMessages.childNodes[l].textContent.includes('You have reached the item limit') && rewards.length < 15) {
