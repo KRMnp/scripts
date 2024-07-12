@@ -302,11 +302,11 @@ function populateItemLog() {
  */
 function setUpSettings() {
     settingsElement = document.createElement('div');
-    settingsElement.style.width = '250px';
+    settingsElement.style.width = '280px';
     settingsElement.style.background = '#78B2D6';
     settingsElement.style.position = 'absolute';
     settingsElement.style.zIndex = '11111';
-    settingsElement.style.left = '143px';
+    settingsElement.style.left = '113px';
     settingsElement.style.top = '45px';
     settingsElement.style.border = '2px solid black';
     settingsElement.style.boxShadow = '3px 3px 0 rgba(0, 0, 0, 0.5)';
@@ -321,6 +321,7 @@ function setUpSettings() {
         row.style.display = 'flex';
         row.style.justifyContent = 'space-between';
         row.style.alignItems = 'center';
+        row.style.textAlign = 'left';
 
         const label = document.createElement('div');
         label.textContent = settings[settingsList[i]].label;
