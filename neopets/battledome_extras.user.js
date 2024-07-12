@@ -145,7 +145,7 @@ function setUpItemLog() {
 
     itemLogElement = document.createElement('div');
     itemLogElement.id = 'itemlog';
-    itemLogElement.style.width = 'calc(100% - 26px)';
+    itemLogElement.style.width = 'calc(100% - 60px)';
     itemLogElement.style.height = '16px';
     itemLogElement.style.position = 'relative';
     itemLogElement.style.margin = '22px 12px';
