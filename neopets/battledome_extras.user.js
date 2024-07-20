@@ -27,7 +27,7 @@ const SPECIES_DIRECTION = {
     bori:  { exceptions: ['darigan'], left_facing: true },
     bruce:  { exceptions: ['baby', 'faerie', 'maraquan', 'royalboy'], left_facing: false },
     buzz: { exceptions: ['baby', 'mutant'], left_facing: true },
-    chia: { exceptions: ['asparagus', 'faerie', 'mutant', 'pepper', 'tomato', ''], left_facing: false },
+    chia: { exceptions: ['asparagus', 'faerie', 'mutant', 'pepper', 'tomato'], left_facing: false },
     chomby: { exceptions: ['baby', 'robot'], left_facing: true },
     cybunny: { exceptions: ['baby', 'grey', 'plushie', 'robot', 'royalgirl', 'tyrannian'], left_facing: true },
     draik: { exceptions: ['darigan', 'faerie', 'maraquan', 'mutant', 'royalboy', 'royalgirl', 'tyrannian'], left_facing: false },
