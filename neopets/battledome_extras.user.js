@@ -1,13 +1,42 @@
 // ==UserScript==
 // @name         Neopets Battledome Extras
 // @namespace    neopets
-// @version      1.0.5
+// @version      1.0.6
 // @description  Adds a few features to the Battledome.
 // @author       krm
-// @match        *://*.neopets.com/dome/arena.phtml
+// @match        *://*.neopets.com/dome/*
 // @icon         https://images.neopets.com/battledome/battledome_small.gif
 // @grant        none
 // ==/UserScript==
+
+//////////////////////////////////////////// EDITABLE CONTENT ////////////////////////////////////////////
+// The default enabled state of features; if they are on or off by default
+// 'false' means the feature is off by default
+// These will be overridden once you toggle the respecitive setting
+const defaultSettingStates = {
+    classicBattlePoses: false,
+    classicBattleLog: false,
+    showAllBattleIcons: false,
+    itemRewardLog: false
+}
+
+// Battledome Featured Challenge, choose from any in 'featuredChallenges' e.g. 'voidWithin' or 'obelisk'
+const CURRENT_CHALLENGE = 'voidWithin';
+
+// Data for featured challenges, feel free to add your own
+const featuredChallenges = {
+    voidWithin: {
+        label: 'The Void Within: Reserve Barracks',
+        imageUrl: 'https://images.neopets.com/dome/npcs/00701_9ce7b13c4f_tvw/featured_701.png',
+        link: 'https://www.neopets.com/dome/barracks.phtml'
+    },
+    obelisk: {
+        label: 'Battleground of the Obelisk',
+        imageUrl: 'https://images.neopets.com/prehistoric/outskirts/pf3g7v2c.jpg',
+        link: 'https://www.neopets.com/prehistoric/battleground/'
+    }
+}
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 const POSE = {
     1: { name: 'angry', suffix: 'baby' },
@@ -94,27 +123,27 @@ const settings = {
     oldPose: {
         label: 'Show Classic Poses',
         key: 'np_bd_pose',
-        isActive: false,
+        isActive: defaultSettingStates.classicBattlePoses,
         toggleElement: null
     },
     oldBattleLog: {
         label: 'Show Classic Combat Log',
         key: 'np_bd_log',
-        isActive: false,
+        isActive: defaultSettingStates.classicBattleLog,
         toggle: null,
         toggleElement: null
     },
     allIcons: {
         label: 'Show All Combat Log Icons',
         key: 'np_bd_log_icons',
-        isActive: false,
+        isActive: defaultSettingStates.showAllBattleIcons,
         toggle: null,
         toggleElement: null
     },
     itemLog: {
         label: 'Enable Item Log',
         key: 'np_bd_item_log',
-        isActive: false,
+        isActive: defaultSettingStates.itemRewardLog,
         toggle: null,
         toggleElement: null
     }
@@ -728,104 +757,138 @@ function startbattleInterval() {
     }, 100);
 }
 
-if (battleInterval) clearInterval(battleInterval);
+// Start script
+const urlPaths = document.URL.replace(/\/$/, "").split('/');
 
-document.getElementById('arenacontainer').addEventListener("click", (event) => {
-    // If start fight button clicked, set up settings
-    if (event.target.parentNode?.id === 'start' || event.target.parentNode?.id === 'fight') {
-        if (!settingsElement) {
-            if (setUpElements()) {
-                setUpSettings();
+if (urlPaths.length) {
+    const lastPath = urlPaths[urlPaths.length - 1];
 
-                const settingsList = Object.keys(settings);
-                for (let i = 0; i < settingsList.length; i++) {
-                    settings[settingsList[i]].isActive = localStorage.getItem(settings[settingsList[i]].key) === 'true';
-                    toggleSetting(settingsList[i]);
-                }
+    if (lastPath == 'dome') {
+        const featured = document.getElementById('bdHomeFeatured');
+        const featuredLabel = document.getElementById('bdHomeFeaturedText');
+        const featuredImage = document.getElementById('bdHomeFeaturedImage');
+        if (featured && featuredImage && featuredLabel && featuredLabel.textContent == 'Status: Idle...') {
+            featuredImage.src = featuredChallenges[CURRENT_CHALLENGE].imageUrl;
+            featuredLabel.textContent = featuredChallenges[CURRENT_CHALLENGE].label;
+
+            const featuredLink = document.createElement('a');
+            featuredLink.href = featuredChallenges[CURRENT_CHALLENGE].link;
+            featuredLink.style.display = 'block';
+            featuredLink.style.height = '100%';
+
+            while (featured.childNodes.length > 0) {
+                featuredLink.appendChild(featured.childNodes[0]);
             }
 
-            // Fix Cosmic Dome foreground
-            const sceneElement = document.getElementById('gQ_scenegraph');
-            if (sceneElement && sceneElement.querySelector('#foreground')?.firstChild?.style.backgroundImage.includes('cosmic_dome')) {
-                sceneElement.querySelector('#foreground').firstChild.style.width = '100%';
-                sceneElement.querySelector('#foreground').firstChild.style.height = '100%';
-            }
+            featured.appendChild(featuredLink);
         }
-        // Fix search bar randomly appearing
-        const searchBar = document.getElementById('navSearchH5')
-        if (searchBar && searchBar.style.display !== 'none') searchBar.style.display = 'none';
     }
 
-    // If collect rewards button clicked
-    if (event.target.classList.contains('end_ack')) {
-        // Stop battle interval
-        clearInterval(battleInterval);
+    if (lastPath.includes('arena')) {
+        if (battleInterval) clearInterval(battleInterval);
 
-        // Check for rewards
-        rewardRows = document.getElementById('bd_rewardsloot').firstChild.childNodes;
-        for (let r = 0; r < rewardRows.length; r++) {
-            const endMessages = rewardRows[r].querySelector('ul');
-            if (endMessages?.childNodes) {
-                for (let l = 0; l < endMessages.childNodes.length; l++) {
-                    // If NP limit reached
-                    if (endMessages.childNodes[l].textContent.includes('You have reached the NP limit')
-                        && (parseInt(document.getElementById('itemlogfooter')?.firstChild?.textContent) < 50000)) {
-                        document.getElementById('itemlogfooter').firstChild.textContent = '50000 NP';
-                        localStorage.setItem('np_bd_neopoints', 50000);
+        document.getElementById('arenacontainer').addEventListener("click", (event) => {
+            // If start fight button clicked, set up settings
+            if (event.target.parentNode?.id === 'start' || event.target.parentNode?.id === 'fight') {
+                if (!settingsElement) {
+                    if (setUpElements()) {
+                        setUpSettings();
+        
+                        const settingsList = Object.keys(settings);
+                        for (let i = 0; i < settingsList.length; i++) {
+                            settings[settingsList[i]].isActive = localStorage.getItem(settings[settingsList[i]].key) === 'true';
+                            toggleSetting(settingsList[i]);
+                        }
                     }
-                    // If item limit reached
-                    if (endMessages.childNodes[l].textContent.includes('You have reached the item limit') && rewards.length < 15) {
-                        if (rewards.length === 0) {
-                            const messageElement = document.createElement('div');
-                            messageElement.style.paddingBlock = '20px 10px';
-                            messageElement.style.fontSize = '18px';
-                            messageElement.style.fontWeight = '600';
-                            messageElement.textContent = 'You have already collected all your rewards today!';
-                            itemLogElement.querySelector('#itemloglist').append(messageElement);
-                            document.getElementById('footeritemcount').textContent = '15/15 Items';
-                        } else {
-                            while (rewards.length < 15) {
-                                rewards.push({
-                                    img: 'https://images.neopets.com/ncmall/cleaners/question.png',
-                                    name: 'Check Inventory'
-                                });
+        
+                    // Fix Cosmic Dome foreground
+                    const sceneElement = document.getElementById('gQ_scenegraph');
+                    if (sceneElement && sceneElement.querySelector('#foreground')?.firstChild?.style.backgroundImage.includes('cosmic_dome')) {
+                        sceneElement.querySelector('#foreground').firstChild.style.width = '100%';
+                        sceneElement.querySelector('#foreground').firstChild.style.height = '100%';
+                    }
+                }
+                // Fix search bar randomly appearing
+                const searchBar = document.getElementById('navSearchH5')
+                if (searchBar && searchBar.style.display !== 'none') searchBar.style.display = 'none';
+            }
+        
+            // If collect rewards button clicked
+            if (event.target.classList.contains('end_ack')) {
+                // Stop battle interval
+                clearInterval(battleInterval);
+        
+                // Check for rewards
+                rewardSlot = document.getElementById('bd_rewardsloot');
+                if (rewardSlot) {
+                    rewardSlot.style.height = 'auto';
+                    rewardRows = rewardSlot.firstChild.childNodes;
+                    for (let r = 0; r < rewardRows.length; r++) {
+                        const endMessages = rewardRows[r].querySelector('ul');
+                        if (endMessages?.childNodes) {
+                            for (let l = 0; l < endMessages.childNodes.length; l++) {
+                                // If NP limit reached
+                                if (endMessages.childNodes[l].textContent.includes('You have reached the NP limit')
+                                    && (parseInt(document.getElementById('itemlogfooter')?.firstChild?.textContent) < 50000)) {
+                                    document.getElementById('itemlogfooter').firstChild.textContent = '50000 NP';
+                                    localStorage.setItem('np_bd_neopoints', 50000);
+                                }
+                                // If item limit reached
+                                if (endMessages.childNodes[l].textContent.includes('You have reached the item limit') && rewards.length < 15) {
+                                    if (rewards.length === 0) {
+                                        const messageElement = document.createElement('div');
+                                        messageElement.style.paddingBlock = '20px 10px';
+                                        messageElement.style.fontSize = '18px';
+                                        messageElement.style.fontWeight = '600';
+                                        messageElement.textContent = 'You have already collected all your rewards today!';
+                                        itemLogElement.querySelector('#itemloglist').append(messageElement);
+                                        document.getElementById('footeritemcount').textContent = '15/15 Items';
+                                    } else {
+                                        while (rewards.length < 15) {
+                                            rewards.push({
+                                                img: 'https://images.neopets.com/ncmall/cleaners/question.png',
+                                                name: 'Check Inventory'
+                                            });
+                                        }
+                                    }
+                                    break;
+                                }
                             }
                         }
-                        break;
+            
+                        let neopoints = Number(localStorage.getItem('np_bd_neopoints'));
+            
+                        const rowItems = rewardRows[r].childNodes;
+                        for (let d = 0; d < rowItems.length; d++) {
+                            const nameElement = rowItems[d].querySelector('span.prizname');
+                            if (nameElement?.textContent) {
+                                if (nameElement.textContent.includes('Neopoints') && document.getElementById('footerneopointcount')?.textContent) {
+                                    const totalNp = Number(nameElement.textContent.split(' ')[0]) + neopoints;
+                                    localStorage.setItem('np_bd_neopoints', totalNp);
+                                    document.getElementById('footerneopointcount').textContent = `${totalNp} NP`;
+                                } else {
+                                    rewards.push({
+                                        img: rowItems[d].querySelector('img').src,
+                                        name: nameElement.textContent
+                                    });
+                                }
+                            }
+                        }
+                    }
+            
+                    if (rewards.length) {
+                        localStorage.setItem('np_bd_items', JSON.stringify(rewards));
+                        document.getElementById('footeritemcount').textContent = `${rewards.length}/15 Items`;
+                        populateItemLog();
                     }
                 }
             }
-
-            let neopoints = Number(localStorage.getItem('np_bd_neopoints'));
-
-            const rowItems = rewardRows[r].childNodes;
-            for (let d = 0; d < rowItems.length; d++) {
-                const nameElement = rowItems[d].querySelector('span.prizname');
-                if (nameElement?.textContent) {
-                    if (nameElement.textContent.includes('Neopoints') && document.getElementById('footerneopointcount')?.textContent) {
-                        const totalNp = Number(nameElement.textContent.split(' ')[0]) + neopoints;
-                        localStorage.setItem('np_bd_neopoints', totalNp);
-                        document.getElementById('footerneopointcount').textContent = `${totalNp} NP`;
-                    } else {
-                        rewards.push({
-                            img: rowItems[d].querySelector('img').src,
-                            name: nameElement.textContent
-                        });
-                    }
-                }
+        
+            // If Combat Log button is clicked
+            if (event.target.id === 'flcollapse' && (settings.allIcons.isActive || settings.oldBattleLog.isActive) && battleLogOverrideElement) {
+                battleLogExpanded = !battleLogExpanded;
+                toggleExpandBattleLog();
             }
-        }
-
-        if (rewards.length) {
-            localStorage.setItem('np_bd_items', JSON.stringify(rewards));
-            document.getElementById('footeritemcount').textContent = `${rewards.length}/15 Items`;
-            populateItemLog();
-        }
+        });
     }
-
-    // If Combat Log button is clicked
-    if (event.target.id === 'flcollapse' && (settings.allIcons.isActive || settings.oldBattleLog.isActive) && battleLogOverrideElement) {
-        battleLogExpanded = !battleLogExpanded;
-        toggleExpandBattleLog();
-    }
-});
+}
