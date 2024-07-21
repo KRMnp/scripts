@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Neopets Battledome Extras
 // @namespace    neopets
-// @version      1.0.4
+// @version      1.0.5
 // @description  Adds a few features to the Battledome.
 // @author       krm
 // @match        *://*.neopets.com/dome/arena.phtml
@@ -16,10 +16,8 @@ const POSE = {
     4: { name: 'defended', suffix: 'left' }
 };
 
-// Angry poses do not face the same direction across species and color
-// We will need to log the direction each angry pose faces so it can face the opponent correctly
-// `left_facing` if true, tells us that the angry poses face left for the majority of the colors
-// `exceptions` is a list containing colors that have the angry pose facing the opposite direction
+
+// Left facing is true if majority of colors face left
 const SPECIES_DIRECTION = {
     acara: { exceptions: ['faerie', 'grey', 'robot', 'royalgirl'], left_facing: true },
     aisha: { exceptions: ['royalboy', 'royalgirl'], left_facing: true },
@@ -27,7 +25,7 @@ const SPECIES_DIRECTION = {
     bori:  { exceptions: ['darigan'], left_facing: true },
     bruce:  { exceptions: ['baby', 'faerie', 'maraquan', 'royalboy'], left_facing: false },
     buzz: { exceptions: ['baby', 'mutant'], left_facing: true },
-    chia: { exceptions: ['asparagus', 'faerie', 'mutant', 'pepper', 'tomato'], left_facing: false },
+    chia: { exceptions: ['asparagus', 'faerie', 'mutant', 'pepper', 'tomato', ''], left_facing: false },
     chomby: { exceptions: ['baby', 'robot'], left_facing: true },
     cybunny: { exceptions: ['baby', 'grey', 'plushie', 'robot', 'royalgirl', 'tyrannian'], left_facing: true },
     draik: { exceptions: ['darigan', 'faerie', 'maraquan', 'mutant', 'royalboy', 'royalgirl', 'tyrannian'], left_facing: false },
@@ -207,7 +205,7 @@ function setUpItemLog() {
 
     itemLogElement = document.createElement('div');
     itemLogElement.id = 'itemlog';
-    itemLogElement.style.width = 'calc(100% - 60px)';
+    itemLogElement.style.width = '956px';
     itemLogElement.style.height = '16px';
     itemLogElement.style.position = 'relative';
     itemLogElement.style.margin = '22px 12px';
@@ -298,7 +296,10 @@ function setUpItemLog() {
         populateItemLog();
     }
 
-    if (statusElement) statusElement.after(itemLogElement);
+    if (statusElement) {
+      statusElement.style.width = '980px'; // Fix width of status message
+      statusElement.after(itemLogElement);
+    }
     itemLogExpanded = localStorage.getItem('np_bd_item_log_expanded') === 'true';
     toggleExpandItemLog();
 }
@@ -544,7 +545,7 @@ function overrideBattleLog() {
                 if (icon.classList.contains('physical') && icon.classList.contains('defend')) icon.style.backgroundPosition = '-140px -20px';
                 if (icon.classList.contains('water') && icon.classList.contains('defend')) icon.style.backgroundPosition = '-100px -20px';
                 iconContainers[i].textContent='';
-    
+
                 for (let j = 0; j < iconCount; j++) {
                     iconContainers[i].append(icon.cloneNode(false));
                 }
@@ -572,7 +573,7 @@ function overrideBattleLog() {
         logBackground.style.height = 'calc(100% - 58px)';
         logBackground.style.width = 'calc(100% - 24px)';
         battleLogOverrideElement.insertBefore(logBackground, battleLogOverrideElement.firstChild);
-    
+
         const tableBody = battleLogOverrideElement.querySelector('#log').firstElementChild;
         if (tableBody?.childNodes) {
             const rows = tableBody.childNodes;
@@ -580,7 +581,7 @@ function overrideBattleLog() {
                 // Ignore row dividers
                 if (rows[l]?.childNodes.length > 1) {
                     rows[l].style.height = '40px';
-        
+
                     let icons;
                     if (rows[l]?.firstChild.hasChildNodes()) {
                         icons = rows[l].firstChild;
@@ -592,7 +593,7 @@ function overrideBattleLog() {
                         rows[l].lastChild.style.backgroundColor = 'transparent';
                         rows[l].firstChild.style.backgroundColor = 'transparent';
                     }
-        
+
                     if (icons?.hasChildNodes()) {
                         if (icons?.firstChild?.firstChild.classList.contains('defend')) {
                             icons.style.backgroundColor = '#B9E88B';
@@ -732,14 +733,14 @@ document.getElementById('arenacontainer').addEventListener("click", (event) => {
         if (!settingsElement) {
             if (setUpElements()) {
                 setUpSettings();
-    
+
                 const settingsList = Object.keys(settings);
                 for (let i = 0; i < settingsList.length; i++) {
                     settings[settingsList[i]].isActive = localStorage.getItem(settings[settingsList[i]].key) === 'true';
                     toggleSetting(settingsList[i]);
                 }
             }
-    
+
             // Fix Cosmic Dome foreground
             const sceneElement = document.getElementById('gQ_scenegraph');
             if (sceneElement && sceneElement.querySelector('#foreground')?.firstChild?.style.backgroundImage.includes('cosmic_dome')) {
