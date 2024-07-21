@@ -17,7 +17,10 @@ const POSE = {
 };
 
 
-// Left facing is true if majority of colors face left
+// Angry poses do not face the same direction across species and color
+// We will need to log the direction each angry pose faces so it can face the opponent correctly
+// `left_facing` if true, tells us that the angry poses face left for the majority of the colors
+// `exceptions` is a list containing colors that have the angry pose facing the opposite direction
 const SPECIES_DIRECTION = {
     acara: { exceptions: ['faerie', 'grey', 'robot', 'royalgirl'], left_facing: true },
     aisha: { exceptions: ['royalboy', 'royalgirl'], left_facing: true },
@@ -25,7 +28,7 @@ const SPECIES_DIRECTION = {
     bori:  { exceptions: ['darigan'], left_facing: true },
     bruce:  { exceptions: ['baby', 'faerie', 'maraquan', 'royalboy'], left_facing: false },
     buzz: { exceptions: ['baby', 'mutant'], left_facing: true },
-    chia: { exceptions: ['asparagus', 'faerie', 'mutant', 'pepper', 'tomato', ''], left_facing: false },
+    chia: { exceptions: ['asparagus', 'faerie', 'mutant', 'pepper', 'tomato'], left_facing: false },
     chomby: { exceptions: ['baby', 'robot'], left_facing: true },
     cybunny: { exceptions: ['baby', 'grey', 'plushie', 'robot', 'royalgirl', 'tyrannian'], left_facing: true },
     draik: { exceptions: ['darigan', 'faerie', 'maraquan', 'mutant', 'royalboy', 'royalgirl', 'tyrannian'], left_facing: false },
