@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Neopets Battledome Extras
 // @namespace    neopets
-// @version      1.0.6
+// @version      1.0.7
 // @description  Adds a few features to the Battledome.
 // @author       krm
 // @match        *://*.neopets.com/dome/*
@@ -706,7 +706,7 @@ function overrideBattlePose() {
 
             // Flip angry pose image for certain species
             let direction = SPECIES_DIRECTION[petData[activePetName].species].left_facing ? -1 : 1;
-            if (SPECIES_DIRECTION[petData[activePetName].species].exceptions.length && SPECIES_DIRECTION[petData[activePetName].species].exceptions.includes()) {
+            if (SPECIES_DIRECTION[petData[activePetName].species].exceptions.length && SPECIES_DIRECTION[petData[activePetName].species].exceptions.includes(petData[activePetName].color)) {
                 direction *= -1;
             }
 
@@ -835,7 +835,7 @@ if (urlPaths.length) {
                                 }
                                 // If item limit reached
                                 if (endMessages.childNodes[l].textContent.includes('You have reached the item limit') && rewards.length < 15) {
-                                    if (rewards.length === 0) {
+                                    if (rewards.length === 0 && itemLogElement) {
                                         const messageElement = document.createElement('div');
                                         messageElement.style.paddingBlock = '20px 10px';
                                         messageElement.style.fontSize = '18px';
@@ -876,7 +876,7 @@ if (urlPaths.length) {
                         }
                     }
             
-                    if (rewards.length) {
+                    if (rewards.length && itemLogElement) {
                         localStorage.setItem('np_bd_items', JSON.stringify(rewards));
                         document.getElementById('footeritemcount').textContent = `${rewards.length}/15 Items`;
                         populateItemLog();
