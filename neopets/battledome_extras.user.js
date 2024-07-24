@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Neopets Battledome Extras
 // @namespace    neopets
-// @version      1.0.7
+// @version      1.0.8
 // @description  Adds a few features to the Battledome.
 // @author       krm
 // @match        *://*.neopets.com/dome/*
@@ -240,7 +240,7 @@ function setUpItemLog() {
     itemLogElement.style.width = '956px';
     itemLogElement.style.height = '16px';
     itemLogElement.style.position = 'relative';
-    itemLogElement.style.margin = '22px 12px';
+    itemLogElement.style.margin = '22px 12px 32px 12px';
     itemLogElement.style.boxShadow = 'black 0px 0px 0px 3px, rgb(255, 206, 0) 0px 0px 0px 9px, black 0px 0px 0px 12px';
     itemLogElement.style.display = 'none';
     itemLogElement.style.flexDirection = 'column';
@@ -262,10 +262,11 @@ function setUpItemLog() {
     footerElement.style.backgroundColor = '#78B2D6';
     footerElement.style.height = '28px';
     footerElement.style.width = '100%';
+    footerElement.style.display = 'flex';
+    footerElement.style.justifyContent = 'space-between';
 
     const footerNeopointCount = document.createElement('div');
     footerNeopointCount.id = 'footerneopointcount';
-    footerNeopointCount.style.float = 'left';
     footerNeopointCount.style.height = '28px';
     footerNeopointCount.style.display = 'flex';
     footerNeopointCount.style.alignItems = 'center';
@@ -276,7 +277,6 @@ function setUpItemLog() {
 
     const footerItemCount = document.createElement('div');
     footerItemCount.id = 'footeritemcount';
-    footerItemCount.style.float = 'right';
     footerItemCount.style.height = '28px';
     footerItemCount.style.display = 'flex';
     footerItemCount.style.alignItems = 'center';
@@ -285,7 +285,24 @@ function setUpItemLog() {
     footerItemCount.style.fontWeight = '600';
     footerItemCount.style.fontSize = '18px';
 
+    const footerVoidPointCount = document.createElement('a');
+    footerVoidPointCount.href = 'https://www.neopets.com/tvw/rewards/';
+    footerVoidPointCount.id = 'footervoidpointcount';
+    footerVoidPointCount.style.height = '50px';
+    footerVoidPointCount.style.display = 'flex';
+    footerVoidPointCount.style.alignItems = 'center';
+    footerVoidPointCount.style.justifyContent = 'center';
+    footerVoidPointCount.style.width = '175px';
+    footerVoidPointCount.style.borderImage = 'linear-gradient(transparent, transparent) 50 50 fill / 30px 30px';
+    footerVoidPointCount.style.borderImageSource = 'url(https://images.neopets.com/plots/tvw/home/images/point-backing.png)';
+    footerVoidPointCount.style.fontSize = '24px';
+    footerVoidPointCount.style.fontFamily = '"Cafeteria", "Arial Bold", sans-serif';
+    footerVoidPointCount.style.color = '#FFF';
+    footerVoidPointCount.style.position = 'relative';
+    footerVoidPointCount.style.bottom = '5px';
+
     footerElement.append(footerNeopointCount);
+    footerElement.append(footerVoidPointCount);
     footerElement.append(footerItemCount);
 
     const collapseElement = document.createElement('div');
@@ -319,12 +336,15 @@ function setUpItemLog() {
         localStorage.setItem('np_bd_date', date);
         localStorage.setItem('np_bd_items', JSON.stringify([]));
         localStorage.setItem('np_bd_neopoints', 0);
+        localStorage.setItem('np_bd_void_points', 0);
         footerNeopointCount.textContent = '0 NP';
         footerItemCount.textContent = '0/15 Items';
+        footerVoidPointCount.textContent = '0/200 Plot Points';
     } else {
         rewards = JSON.parse(localStorage.getItem('np_bd_items') || '[]');
         footerItemCount.textContent = `${rewards.length}/15 Items`;
         footerNeopointCount.textContent = `${ Number(localStorage.getItem('np_bd_neopoints')) || 0 } NP`;
+        footerVoidPointCount.textContent = `${ Number(localStorage.getItem('np_bd_void_points')) || 0 }/200 Plot Points`;
         populateItemLog();
     }
 
@@ -344,8 +364,16 @@ function toggleExpandItemLog() {
         itemLogElement.querySelector('#itemloghidden').style.display = itemLogExpanded ? 'none' : 'block';
         itemLogElement.querySelector('#itemloglist').style.display = itemLogExpanded ? 'flex' : 'none';
         itemLogElement.querySelector('#itemloglabel').style.backgroundImage = `url('${itemLogExpanded ? ITEM_LOG_EXPANDED_IMG : ITEM_LOG_IMG}')`;
+
         itemLogElement.querySelector('#itemlogfooter').style.marginTop = itemLogExpanded ? '0' : '-2px';
         itemLogElement.querySelector('#itemlogfooter').style.boxShadow = itemLogExpanded ? 'none' : 'inset 0 2px 0 0 black';
+
+        itemLogElement.querySelector('#footervoidpointcount').style.bottom = itemLogExpanded ? '5px' : '-18px';
+        itemLogElement.querySelector('#footervoidpointcount').style.height = itemLogExpanded ? '50px' : '35px';
+        itemLogElement.querySelector('#footervoidpointcount').style.width = itemLogExpanded ? '220px' : '180px';
+        itemLogElement.querySelector('#footervoidpointcount').style.fontSize = itemLogExpanded ? '24px' : '18px';
+
+
         itemLogElement.style.height = itemLogExpanded ? 'auto' : '30px';
         localStorage.setItem('np_bd_item_log_expanded', itemLogExpanded);
     }
@@ -672,7 +700,7 @@ function toggleExpandBattleLog() {
 
         for (let i = 0; i < elementIds.length; i++) {
             const element = logContainer.querySelectorAll(elementIds[i]);
-            for(var e = 0; e < element.length; e++) {
+            for(let e = 0; e < element.length; e++) {
                 if (battleLogExpanded) {
                     element[e].classList.add('collapsed');
                 } else {
@@ -721,9 +749,9 @@ function overrideBattlePose() {
  */
 function fetchPetData() {
     fetch('https://www.neopets.com/home/index.phtml').then(response => response.text()).then(html => {
-        var parser = new DOMParser();
-        var fetchedDocument = parser.parseFromString(html, 'text/html');
-        var petElements = fetchedDocument.getElementsByClassName('hp-carousel-pet');
+        const parser = new DOMParser();
+        const fetchedDocument = parser.parseFromString(html, 'text/html');
+        const petElements = fetchedDocument.getElementsByClassName('hp-carousel-pet');
         for (let i = 0; i < petElements.length; i++) {
             petData[petElements[i].dataset.name] = {
                 species: petElements[i].dataset.species.toLowerCase(),
@@ -819,7 +847,7 @@ if (urlPaths.length) {
                 clearInterval(battleInterval);
         
                 // Check for rewards
-                rewardSlot = document.getElementById('bd_rewardsloot');
+                const rewardSlot = document.getElementById('bd_rewardsloot');
                 if (rewardSlot) {
                     rewardSlot.style.height = 'auto';
                     rewardRows = rewardSlot.firstChild.childNodes;
@@ -827,14 +855,15 @@ if (urlPaths.length) {
                         const endMessages = rewardRows[r].querySelector('ul');
                         if (endMessages?.childNodes) {
                             for (let l = 0; l < endMessages.childNodes.length; l++) {
+                                const message = endMessages.childNodes[l].textContent;
                                 // If NP limit reached
-                                if (endMessages.childNodes[l].textContent.includes('You have reached the NP limit')
-                                    && (parseInt(document.getElementById('itemlogfooter')?.firstChild?.textContent) < 50000)) {
-                                    document.getElementById('itemlogfooter').firstChild.textContent = '50000 NP';
+                                if (message.includes('You have reached the NP limit')
+                                    && (parseInt(document.getElementById('footerneopointcount').textContent) < 50000)) {
+                                        document.getElementById('footerneopointcount').textContent = '50000 NP';
                                     localStorage.setItem('np_bd_neopoints', 50000);
                                 }
                                 // If item limit reached
-                                if (endMessages.childNodes[l].textContent.includes('You have reached the item limit') && rewards.length < 15) {
+                                if (message.includes('You have reached the item limit') && rewards.length < 15) {
                                     if (rewards.length === 0 && itemLogElement) {
                                         const messageElement = document.createElement('div');
                                         messageElement.style.paddingBlock = '20px 10px';
@@ -880,6 +909,21 @@ if (urlPaths.length) {
                         localStorage.setItem('np_bd_items', JSON.stringify(rewards));
                         document.getElementById('footeritemcount').textContent = `${rewards.length}/15 Items`;
                         populateItemLog();
+                    }
+                }
+                // Check for plot points
+                const prizeNames = document.getElementsByClassName('prizname');
+                for (let i = 0; i < prizeNames.length; i++) {
+                    if (prizeNames[i].textContent.includes('Plot Points')) {
+                        let plotPoints = Number(localStorage.getItem('np_bd_void_points'));
+                        const awardedPoints = parseInt(prizeNames[i].textContent);
+    
+                        if (plotPoints < 200) {
+                            plotPoints += awardedPoints;
+                        }
+    
+                        document.getElementById('footervoidpointcount').textContent = `${plotPoints}/200 Plot Points`;
+                        localStorage.setItem('np_bd_void_points', plotPoints);
                     }
                 }
             }
