@@ -824,12 +824,6 @@ if (urlPaths.length) {
 
             fightLabel.appendChild(voidPointCount);
         }
-
-        const fightsElement = document.getElementById('rbfightStep1');
-        if (fightsElement && fightsElement.firstChild) {
-            fightsElement.style.position = 'relative';
-
-        }
     }
 
     if (lastPath == 'dome') {
@@ -899,7 +893,7 @@ if (urlPaths.length) {
                                 const message = endMessages.childNodes[l].textContent;
                                 // If NP limit reached
                                 if (message.includes('You have reached the NP limit') && (Number(localStorage.getItem('np_bd_neopoints')) < LIMITS.NEOPOINTS)) {
-                                        document.getElementById('footerneopointcount').textContent = `${LIMITS.NEOPOINTS} NP`;
+                                    document.getElementById('footerneopointcount').textContent = `${LIMITS.NEOPOINTS} NP`;
                                     localStorage.setItem('np_bd_neopoints', LIMITS.NEOPOINTS);
                                 }
                                 // If item limit reached
