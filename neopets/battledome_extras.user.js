@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Neopets Battledome Extras
 // @namespace    neopets
-// @version      1.0.9
+// @version      1.0.10
 // @description  Adds a few features to the Battledome.
 // @author       krm
 // @match        *://*.neopets.com/dome/*
@@ -235,6 +235,18 @@ function setUpElements() {
     return false;
 }
 
+function isNewDay() {
+    const date = (new Date(new Date().toLocaleString('en-US', {timeZone: 'America/Los_Angeles'}))).getDate();
+    if (Number(localStorage.getItem('np_bd_date')) !== date) {
+        localStorage.setItem('np_bd_date', date);
+        localStorage.setItem('np_bd_items', JSON.stringify([]));
+        localStorage.setItem('np_bd_neopoints', 0);
+        localStorage.setItem('np_bd_void_points', 0);
+        return true;
+    }
+    return false;
+}
+
 /**
  * Create item log and add to page
  */
@@ -337,12 +349,7 @@ function setUpItemLog() {
     itemLogElement.append(itemsElement);
     itemLogElement.append(footerElement);
 
-    const date = (new Date(new Date().toLocaleString('en-US', {timeZone: 'America/Los_Angeles'}))).getDate();
-    if (Number(localStorage.getItem('np_bd_date')) !== date) {
-        localStorage.setItem('np_bd_date', date);
-        localStorage.setItem('np_bd_items', JSON.stringify([]));
-        localStorage.setItem('np_bd_neopoints', 0);
-        localStorage.setItem('np_bd_void_points', 0);
+    if (isNewDay()) {
         footerNeopointCount.textContent = '0 NP';
         footerItemCount.textContent = `0/${LIMITS.ITEMS} Items`;
         footerVoidPointCount.textContent = `0/${LIMITS.PLOT_POINTS} Plot Points`;
@@ -792,6 +799,7 @@ function startbattleInterval() {
 }
 
 // Start script
+isNewDay();
 const urlPaths = document.URL.replace(/\/$/, "").split('/');
 
 if (urlPaths.length) {
