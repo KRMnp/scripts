@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Neopets Battledome Extras
 // @namespace    neopets
-// @version      1.0.10
+// @version      1.0.11
 // @description  Adds a few features to the Battledome.
 // @author       krm
 // @match        *://*.neopets.com/dome/*
@@ -828,7 +828,7 @@ if (urlPaths.length) {
             voidPointCount.style.position = 'absolute';
             voidPointCount.style.right = window.screen.width < 860 ? '0px' : '-480px';
             voidPointCount.style.top = '-8px';
-            voidPointCount.textContent = `${localStorage.getItem('np_bd_void_points')}/${LIMITS.PLOT_POINTS} Plot Points`;
+            voidPointCount.textContent = `${localStorage.getItem('np_bd_void_points') || 0 }/${LIMITS.PLOT_POINTS} Plot Points`;
 
             fightLabel.appendChild(voidPointCount);
         }
