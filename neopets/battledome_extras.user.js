@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Neopets Battledome Extras
 // @namespace    neopets
-// @version      1.0.8
+// @version      1.0.9
 // @description  Adds a few features to the Battledome.
 // @author       krm
 // @match        *://*.neopets.com/dome/*
@@ -37,6 +37,12 @@ const featuredChallenges = {
     }
 }
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+const LIMITS = {
+    ITEMS: 15,
+    NEOPOINTS: 50000,
+    PLOT_POINTS: 200
+}
 
 const POSE = {
     1: { name: 'angry', suffix: 'baby' },
@@ -338,13 +344,13 @@ function setUpItemLog() {
         localStorage.setItem('np_bd_neopoints', 0);
         localStorage.setItem('np_bd_void_points', 0);
         footerNeopointCount.textContent = '0 NP';
-        footerItemCount.textContent = '0/15 Items';
-        footerVoidPointCount.textContent = '0/200 Plot Points';
+        footerItemCount.textContent = `0/${LIMITS.ITEMS} Items`;
+        footerVoidPointCount.textContent = `0/${LIMITS.PLOT_POINTS} Plot Points`;
     } else {
         rewards = JSON.parse(localStorage.getItem('np_bd_items') || '[]');
-        footerItemCount.textContent = `${rewards.length}/15 Items`;
+        footerItemCount.textContent = `${rewards.length}/${LIMITS.ITEMS} Items`;
         footerNeopointCount.textContent = `${ Number(localStorage.getItem('np_bd_neopoints')) || 0 } NP`;
-        footerVoidPointCount.textContent = `${ Number(localStorage.getItem('np_bd_void_points')) || 0 }/200 Plot Points`;
+        footerVoidPointCount.textContent = `${ Number(localStorage.getItem('np_bd_void_points')) || 0 }/${LIMITS.PLOT_POINTS} Plot Points`;
         populateItemLog();
     }
 
@@ -791,6 +797,41 @@ const urlPaths = document.URL.replace(/\/$/, "").split('/');
 if (urlPaths.length) {
     const lastPath = urlPaths[urlPaths.length - 1];
 
+    if (lastPath.includes('barracks')) {
+        const fightLabelElements = document.getElementsByClassName('tvw-fight_stepTitle');
+        if (fightLabelElements.length) {
+            const fightLabel = fightLabelElements[0];
+            fightLabel.style.position = 'relative';
+            fightLabel.style.zIndex = '100';
+
+            const voidPointCount = document.createElement('a');
+            voidPointCount.href = 'https://www.neopets.com/tvw/rewards/';
+            voidPointCount.id = 'voidpointcount';
+            voidPointCount.style.height = '60px';
+            voidPointCount.style.display = 'flex';
+            voidPointCount.style.alignItems = 'center';
+            voidPointCount.style.justifyContent = 'center';
+            voidPointCount.style.width = '220px';
+            voidPointCount.style.borderImage = 'linear-gradient(transparent, transparent) 50 50 fill / 30px 30px';
+            voidPointCount.style.borderImageSource = 'url(https://images.neopets.com/plots/tvw/home/images/point-backing.png)';
+            voidPointCount.style.fontSize = '24px';
+            voidPointCount.style.fontFamily = '"Cafeteria", "Arial Bold", sans-serif';
+            voidPointCount.style.color = '#FFF';
+            voidPointCount.style.position = 'absolute';
+            voidPointCount.style.right = window.screen.width < 860 ? '0px' : '-480px';
+            voidPointCount.style.top = '-8px';
+            voidPointCount.textContent = `${localStorage.getItem('np_bd_void_points')}/${LIMITS.PLOT_POINTS} Plot Points`;
+
+            fightLabel.appendChild(voidPointCount);
+        }
+
+        const fightsElement = document.getElementById('rbfightStep1');
+        if (fightsElement && fightsElement.firstChild) {
+            fightsElement.style.position = 'relative';
+
+        }
+    }
+
     if (lastPath == 'dome') {
         const featured = document.getElementById('bdHomeFeatured');
         const featuredLabel = document.getElementById('bdHomeFeaturedText');
@@ -857,13 +898,12 @@ if (urlPaths.length) {
                             for (let l = 0; l < endMessages.childNodes.length; l++) {
                                 const message = endMessages.childNodes[l].textContent;
                                 // If NP limit reached
-                                if (message.includes('You have reached the NP limit')
-                                    && (parseInt(document.getElementById('footerneopointcount').textContent) < 50000)) {
-                                        document.getElementById('footerneopointcount').textContent = '50000 NP';
-                                    localStorage.setItem('np_bd_neopoints', 50000);
+                                if (message.includes('You have reached the NP limit') && (Number(localStorage.getItem('np_bd_neopoints')) < LIMITS.NEOPOINTS)) {
+                                        document.getElementById('footerneopointcount').textContent = `${LIMITS.NEOPOINTS} NP`;
+                                    localStorage.setItem('np_bd_neopoints', LIMITS.NEOPOINTS);
                                 }
                                 // If item limit reached
-                                if (message.includes('You have reached the item limit') && rewards.length < 15) {
+                                if (message.includes('You have reached the item limit') && rewards.length < LIMITS.ITEMS) {
                                     if (rewards.length === 0 && itemLogElement) {
                                         const messageElement = document.createElement('div');
                                         messageElement.style.paddingBlock = '20px 10px';
@@ -871,9 +911,9 @@ if (urlPaths.length) {
                                         messageElement.style.fontWeight = '600';
                                         messageElement.textContent = 'You have already collected all your rewards today!';
                                         itemLogElement.querySelector('#itemloglist').append(messageElement);
-                                        document.getElementById('footeritemcount').textContent = '15/15 Items';
+                                        document.getElementById('footeritemcount').textContent = `${LIMITS.ITEMS}/${LIMITS.ITEMS} Items`;
                                     } else {
-                                        while (rewards.length < 15) {
+                                        while (rewards.length < LIMITS.ITEMS) {
                                             rewards.push({
                                                 img: 'https://images.neopets.com/ncmall/cleaners/question.png',
                                                 name: 'Check Inventory'
@@ -891,10 +931,12 @@ if (urlPaths.length) {
                         for (let d = 0; d < rowItems.length; d++) {
                             const nameElement = rowItems[d].querySelector('span.prizname');
                             if (nameElement?.textContent) {
-                                if (nameElement.textContent.includes('Neopoints') && document.getElementById('footerneopointcount')?.textContent) {
+                                if (nameElement.textContent.includes('Neopoints')) {
                                     const totalNp = Number(nameElement.textContent.split(' ')[0]) + neopoints;
                                     localStorage.setItem('np_bd_neopoints', totalNp);
-                                    document.getElementById('footerneopointcount').textContent = `${totalNp} NP`;
+                                    if (document.getElementById('footerneopointcount')) {
+                                        document.getElementById('footerneopointcount').textContent = `${totalNp} NP`;
+                                    }
                                 } else {
                                     rewards.push({
                                         img: rowItems[d].querySelector('img').src,
@@ -904,11 +946,13 @@ if (urlPaths.length) {
                             }
                         }
                     }
-            
-                    if (rewards.length && itemLogElement) {
+
+                    if (rewards.length) {
                         localStorage.setItem('np_bd_items', JSON.stringify(rewards));
-                        document.getElementById('footeritemcount').textContent = `${rewards.length}/15 Items`;
-                        populateItemLog();
+                        if (document.getElementById('footeritemcount') && itemLogElement) {
+                            document.getElementById('footeritemcount').textContent = `${rewards.length}/${LIMITS.ITEMS} Items`;
+                            populateItemLog();
+                        }
                     }
                 }
                 // Check for plot points
@@ -918,11 +962,14 @@ if (urlPaths.length) {
                         let plotPoints = Number(localStorage.getItem('np_bd_void_points'));
                         const awardedPoints = parseInt(prizeNames[i].textContent);
     
-                        if (plotPoints < 200) {
+                        if (plotPoints < LIMITS.PLOT_POINTS) {
                             plotPoints += awardedPoints;
                         }
     
-                        document.getElementById('footervoidpointcount').textContent = `${plotPoints}/200 Plot Points`;
+                        if (document.getElementById('footervoidpointcount')) {
+                            document.getElementById('footervoidpointcount').textContent = `${plotPoints}/${LIMITS.PLOT_POINTS} Plot Points`;
+                        }
+
                         localStorage.setItem('np_bd_void_points', plotPoints);
                     }
                 }
