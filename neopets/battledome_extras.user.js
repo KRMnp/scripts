@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Neopets Battledome Extras
 // @namespace    neopets
-// @version      1.0.11
+// @version      1.0.12
 // @description  Adds a few features to the Battledome.
 // @author       krm
 // @match        *://*.neopets.com/dome/*
@@ -354,7 +354,6 @@ function setUpItemLog() {
         footerItemCount.textContent = `0/${LIMITS.ITEMS} Items`;
         footerVoidPointCount.textContent = `0/${LIMITS.PLOT_POINTS} Plot Points`;
     } else {
-        rewards = JSON.parse(localStorage.getItem('np_bd_items') || '[]');
         footerItemCount.textContent = `${rewards.length}/${LIMITS.ITEMS} Items`;
         footerNeopointCount.textContent = `${ Number(localStorage.getItem('np_bd_neopoints')) || 0 } NP`;
         footerVoidPointCount.textContent = `${ Number(localStorage.getItem('np_bd_void_points')) || 0 }/${LIMITS.PLOT_POINTS} Plot Points`;
@@ -800,6 +799,7 @@ function startbattleInterval() {
 
 // Start script
 isNewDay();
+rewards = JSON.parse(localStorage.getItem('np_bd_items') || '[]');
 const urlPaths = document.URL.replace(/\/$/, "").split('/');
 
 if (urlPaths.length) {
@@ -901,7 +901,7 @@ if (urlPaths.length) {
                                 const message = endMessages.childNodes[l].textContent;
                                 // If NP limit reached
                                 if (message.includes('You have reached the NP limit') && (Number(localStorage.getItem('np_bd_neopoints')) < LIMITS.NEOPOINTS)) {
-                                    document.getElementById('footerneopointcount').textContent = `${LIMITS.NEOPOINTS} NP`;
+                                    if (itemLogElement) document.getElementById('footerneopointcount').textContent = `${LIMITS.NEOPOINTS} NP`;
                                     localStorage.setItem('np_bd_neopoints', LIMITS.NEOPOINTS);
                                 }
                                 // If item limit reached
