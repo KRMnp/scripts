@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Neopets Battledome Extras
 // @namespace    neopets
-// @version      1.0.13
+// @version      1.0.14
 // @description  Adds a few features to the Battledome.
 // @author       krm
 // @match        *://*.neopets.com/dome/*
@@ -744,7 +744,7 @@ function overrideBattlePose() {
                 poseImage[poseIndex] = `url("//images.neopets.com/pets/${POSE[poseIndex].name}/${petData[activePetName].species}_${petData[activePetName].color}_${POSE[poseIndex].suffix}.gif")`;
             }
 
-            let direction = 1;
+            let direction = -1;
             if (poseIndex == 1) {
                 // Flip angry pose image for certain species
                 direction = SPECIES_DIRECTION[petData[activePetName].species].left_facing ? -1 : 1;
