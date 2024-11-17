@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Neopets Battledome Extras
 // @namespace    neopets
-// @version      1.0.14
+// @version      1.0.15
 // @description  Adds a few features to the Battledome.
 // @author       krm
 // @match        *://*.neopets.com/dome/*
@@ -36,6 +36,34 @@ const featuredChallenges = {
         link: 'https://www.neopets.com/prehistoric/battleground/'
     }
 }
+
+// Image overrides for Classic Pose feature
+// Best if used using 150px × 150px images
+// Replace 'NEOPET_NAME' with your pet's name, you can add multiple pets
+// Set 'whiteBackground' to true if you want a white background covering the arena; set to false by default
+// Replace each pose with an direct image URL, format example ▶ angry: 'https://images.neopets.com/image.png',
+const poseOverrides = {
+    'NEOPET_NAME': {
+        enabled: true,
+        whiteBackground: false,
+        poses: {
+            angry: '',
+            hit: '',
+            closeattack: '',
+            defended: ''
+        }
+    },
+      'NEOPET_NAME': {
+        enabled: true,
+        whiteBackground: false,
+        poses: {
+            angry: '',
+            hit: '',
+            closeattack: '',
+            defended: ''
+        }
+    }
+}
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 const LIMITS = {
@@ -46,9 +74,9 @@ const LIMITS = {
 
 const POSE = {
     1: { name: 'angry', suffix: 'baby' },
-    2: { name: 'hit', suffix: 'left' },
-    3: { name: 'closeattack', suffix: 'left' },
-    4: { name: 'defended', suffix: 'left' }
+    2: { name: 'hit', suffix: 'right' },
+    3: { name: 'closeattack', suffix: 'right' },
+    4: { name: 'defended', suffix: 'right' }
 };
 
 
@@ -211,6 +239,7 @@ function setUpElements() {
             petOverrideElement.style.top = '130px';
             petOverrideElement.style.borderRadius = '10px';
             petOverrideElement.style.opacity = '0';
+            petOverrideElement.style.zIndex = '1';
             petElement.style.transition = 'opacity 0.2s ease 0s';
             petElement.parentNode.insertBefore(petOverrideElement, petElement.nextSibling);
 
@@ -537,15 +566,16 @@ function toggleSetting(settingsKey) {
  */
 function togglePetOverride(active) {
     if (petElement) petElement.style.opacity = active ? '0' : '1';
+    const overrideActive = poseOverrides[activePetName]?.enabled;
     if (petOverrideElement) {
         petOverrideElement.style.opacity = active ? '1' : '0';
         petOverrideElement.style.transition = `opacity 0.2s ease ${active ? '0.4' : '0'}s`;
-        petErrorOverrideElement.style.opacity = active ? '1' : '0';
+        petErrorOverrideElement.style.opacity = active && !overrideActive ? '1' : '0';
         petErrorOverrideElement.style.transition = `opacity 0.2s ease ${active ? '0.4' : '0'}s`;
-        document.getElementById('p1shadow').style.opacity = active ? '0' : '1';
+        document.getElementById('p1shadow').style.opacity = active && !overrideActive ? '0' : '1';
     }
     if (backgroundOverrideElement) {
-        backgroundOverrideElement.style.opacity = active ? '1' : '0';
+        backgroundOverrideElement.style.opacity = overrideActive ? (poseOverrides[activePetName]?.whiteBackground ? '1' : '0') : (active ? '1' : '0');
         backgroundOverrideElement.style.transition = `opacity 0.2s ease ${active ? '0' : '0.4'}s`;
     }
 }
@@ -740,16 +770,22 @@ function overrideBattlePose() {
 
         if (POSE[poseIndex] && petOverrideElement.dataset.pose !== poseIndex && petData[activePetName]) {
             petOverrideElement.dataset.pose = poseIndex;
-            if (!poseImage[poseIndex]) {
-                poseImage[poseIndex] = `url("//images.neopets.com/pets/${POSE[poseIndex].name}/${petData[activePetName].species}_${petData[activePetName].color}_${POSE[poseIndex].suffix}.gif")`;
-            }
 
-            let direction = -1;
-            if (poseIndex == 1) {
-                // Flip angry pose image for certain species
-                direction = SPECIES_DIRECTION[petData[activePetName].species].left_facing ? -1 : 1;
-                if (SPECIES_DIRECTION[petData[activePetName].species].exceptions.length && SPECIES_DIRECTION[petData[activePetName].species].exceptions.includes(petData[activePetName].color)) {
-                    direction *= -1;
+            let direction = 1;
+
+            if (poseOverrides[activePetName]?.enabled && poseOverrides[activePetName]?.poses?.[POSE[poseIndex].name]) {
+                poseImage[poseIndex] = `url(${poseOverrides[activePetName].poses[POSE[poseIndex].name]})`;
+            } else {
+                if (!poseImage[poseIndex]) {
+                    poseImage[poseIndex] = `url("//images.neopets.com/pets/${POSE[poseIndex].name}/${petData[activePetName].species}_${petData[activePetName].color}_${POSE[poseIndex].suffix}.gif")`;
+                }
+
+                if (poseIndex == 1) {
+                    // Flip angry pose image for certain species
+                    direction = SPECIES_DIRECTION[petData[activePetName].species].left_facing ? -1 : 1;
+                    if (SPECIES_DIRECTION[petData[activePetName].species].exceptions.length && SPECIES_DIRECTION[petData[activePetName].species].exceptions.includes(petData[activePetName].color)) {
+                        direction *= -1;
+                    }
                 }
             }
 
@@ -861,20 +897,29 @@ if (urlPaths.length) {
     if (lastPath.includes('arena')) {
         if (battleInterval) clearInterval(battleInterval);
 
+        // Fix color on nav menu options
+        const navBar = document.getElementsByClassName('nav-top-grid__2020')[0];
+        if (navBar) {
+            navBar.querySelectorAll('h4').forEach(header => {
+                header.style.color = 'inherit';
+                header.style.backgroundColor = 'inherit';
+            });
+        }
+
         document.getElementById('arenacontainer').addEventListener("click", (event) => {
             // If start fight button clicked, set up settings
             if (event.target.parentNode?.id === 'start' || event.target.parentNode?.id === 'fight') {
                 if (!settingsElement) {
                     if (setUpElements()) {
                         setUpSettings();
-        
+
                         const settingsList = Object.keys(settings);
                         for (let i = 0; i < settingsList.length; i++) {
                             settings[settingsList[i]].isActive = localStorage.getItem(settings[settingsList[i]].key) === 'true';
                             toggleSetting(settingsList[i]);
                         }
                     }
-        
+
                     // Fix Cosmic Dome foreground
                     const sceneElement = document.getElementById('gQ_scenegraph');
                     if (sceneElement && sceneElement.querySelector('#foreground')?.firstChild?.style.backgroundImage.includes('cosmic_dome')) {
@@ -883,15 +928,15 @@ if (urlPaths.length) {
                     }
                 }
                 // Fix search bar randomly appearing
-                const searchBar = document.getElementById('navSearchH5')
+                const searchBar = document.getElementById('navSearchH5');
                 if (searchBar && searchBar.style.display !== 'none') searchBar.style.display = 'none';
             }
-        
+
             // If collect rewards button clicked
             if (event.target.classList.contains('end_ack')) {
                 // Stop battle interval
                 clearInterval(battleInterval);
-        
+
                 // Check for rewards
                 const rewardSlot = document.getElementById('bd_rewardsloot');
                 if (rewardSlot) {
@@ -929,9 +974,9 @@ if (urlPaths.length) {
                                 }
                             }
                         }
-            
+
                         let neopoints = Number(localStorage.getItem('np_bd_neopoints'));
-            
+
                         const rowItems = rewardRows[r].childNodes;
                         for (let d = 0; d < rowItems.length; d++) {
                             const nameElement = rowItems[d].querySelector('span.prizname');
@@ -966,11 +1011,11 @@ if (urlPaths.length) {
                     if (prizeNames[i].textContent.includes('Plot Points')) {
                         let plotPoints = Number(localStorage.getItem('np_bd_void_points'));
                         const awardedPoints = parseInt(prizeNames[i].textContent);
-    
+
                         if (plotPoints < LIMITS.PLOT_POINTS) {
                             plotPoints += awardedPoints;
                         }
-    
+
                         if (document.getElementById('footervoidpointcount')) {
                             document.getElementById('footervoidpointcount').textContent = `${plotPoints}/${LIMITS.PLOT_POINTS} Plot Points`;
                         }
@@ -979,7 +1024,7 @@ if (urlPaths.length) {
                     }
                 }
             }
-        
+
             // If Combat Log button is clicked
             if (event.target.id === 'flcollapse' && (settings.allIcons.isActive || settings.oldBattleLog.isActive) && battleLogOverrideElement) {
                 battleLogExpanded = !battleLogExpanded;
